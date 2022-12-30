@@ -1,9 +1,10 @@
 
 
-
+#TODO: make apples you can feed to the horse.
+print(
 """
 Welcome to this Ranger's Apprentice Minigame!
-"""
+""")
 
 # Import the library contents
 import adventurelib as adv
@@ -18,32 +19,26 @@ There is a small stable with three stalls, two of which are empty.
 One of the stalls holds a small, scruffy horse,
 that you mysteriosly know is named "Acorn".
 And also there's the label on the stall.
-with a nearly empty water trough and a small pile of hay.
-There is a saddle on a rack.
+There is a water trough and a small pile of hay.
 
-Across the stable yard, to the East, you see a small cabin.
-To the North, you see the small path that led you here.
 """
 )
 
 cabin = adv.Room(
     """
-There is a bed, a fireplace, a dusty table with 4 chairs scattered around,
+There is a bed, a fireplace, a dusty table with four chairs scattered around,
 and a rocking chair by the fire. There is also a small desk with some loose sheets of paper.
 A couple of the pieces of paper has an oak leaf insignia. On a peg on the wall,
 there is a grey and green mottled cloak hung on a peg by the locked door.
 The window, before you crashed through, was thick canvas with libral amounts of oil.
-
-To the West is the stable.
 """
 )
 
 forest = adv.Room(
     """
 You are in a forest. There is a small path. If you look closely,
-you may even see some trees around the forest. The path leads south,
-and seems to start exactly where you are standing. It is early morning,
-and you seem to be healthy and in reasonable shape...
+you may even see some trees around the forest. The path leads south, along a stream, 
+and seems to start exactly where you are standing. You seem to be healthy and in reasonable shape...
 
 To the south you see a glimpse of a building through the trees.
 """
@@ -67,9 +62,34 @@ current_room = forest
 
 # Define functions to use items
 horse_saddled = False
+water_full = False
+bucket_full = False
+slip_stable = False
+slip_forest = False
+slip_cabin = False
+
+@adv.when('slip')
+def slip():
+    global slip_forest
+    global slip_cabin
+    global slip_stable
+    global current_room
+    
+    if current_room == forest and slip_forest == True:
+        print("You slipped on that nice patch of mud you made.")
+    elif current_room == cabin and slip_cabin == True:
+        print("You slipped on that nice puddle of water you made.")
+    elif current_room == stable and slip_stable == True:
+        print("You slipped on that nice patch of mud you made.")
+    
+    else:
+        print("I'm sorry, you're going to have to spill something to slip on")
+
+@adv.when("use bucket")
+def bucket_error():
+    print("I'm sorry, you're going to have to be more specific.")
 
 @adv.when("inventory")
-@adv.when("inv")
 @adv.when("i")
 def list_inventory():
     if inventory:
@@ -78,6 +98,106 @@ def list_inventory():
             print(f"  - {item}")
     else:
         print("You have nothing in your inventory.")
+        
+@adv.when('dump bucket')
+@adv.when('empty bucket')
+@adv.when('spill bucket')
+def dump_bucket():
+    global inventory
+    obj = inventory.find('bucket')
+    # Do you have this thing?
+    if not obj:
+        print("You don't have a bucket to spill.")
+    else:
+        global bucket_full
+        global slip_forest
+        global slip_stable
+        global slip_cabin
+        if bucket_full:
+            print("""You dump the bucket on the ground,
+creating a nice patch of mud perfect for slipping on.""")
+            bucket_full = False
+            if current_room == forest:
+                slip_forest = True
+            elif current_room == stable:
+                slip_stable == True
+            elif current_room == cabin:
+                slip_cabin == True
+        else:
+            print("""Umm, you need a bucket with water in it...""")
+        
+@adv.when("fill bucket")
+def fill_bucket():
+    global inventory
+    obj = inventory.find('bucket')
+    # Do you have this thing?
+    if not obj:
+        print("You don't have a bucket, silly person.")
+    else:
+        global bucket_full
+        if not bucket_full and current_room == forest:
+            print("""You fill the bucket up from the small woodland stream.""")
+            bucket_full = True
+        else:
+            if bucket_full:
+                print("""Well, you're very through.
+The bucket is already full...
+How do you propose to fill it again?""")
+            elif current_room != forest:
+                print("And what do you plan on filling the bucket with?!")
+            
+            
+@adv.when("wash horse")
+def wash_horse():
+    global inventory
+    obj = inventory.find('bucket')
+    # Do you have this thing?
+    if not obj:
+        print("You don't have a bucket. Do you need me to tell you again?")
+    else:
+        global bucket_full
+        global horse_saddled
+        if bucket_full and not horse_saddled:
+            print("""You wash the horse. Now, all clean, it rolls in the dust of the stableyard.
+You return it to its stall.""")
+            bucket_full = False
+        else:
+            print("""Umm, make sure the horse is unsaddled, and your bucket is full.""")
+
+            
+@adv.when("fill trough")
+@adv.when("water horse")
+def fill_trough():
+    global inventory
+    obj = inventory.find('bucket')
+    # Do you have this thing?
+    if not obj:
+        print("You don't have a bucket. What part of that do you not understand?")
+    else:
+        global bucket_full
+        global water_full
+        if bucket_full and not water_full and not horse_saddled:
+            print("""You fill the trough and put the horse in the stall. It whickers in gratitude.""")
+            bucket_full = False
+            water_full = True
+        else:
+            print("""Umm, make sure the horse is unsaddled,
+the bucket is full,
+and the trough is empty.""")
+
+
+@adv.when("unsaddle horse")
+@adv.when("take off saddle")
+def unsaddle_horse(): 
+    global horse_saddled
+    global inventory
+    if horse_saddled:
+        horse_saddled = False
+        stable.contents.add(saddle)
+        print("You put the saddle back on the rack and the horse back in the stall.")
+    else:
+        print("Did you really just try to undsaddle an unsaddled horse?")
+
 
 
 @adv.when("saddle horse")
@@ -126,7 +246,27 @@ def read_papers():
             There is also a date... three days ago.
             A map holds an 'x' right on the closest village.
             A note says: "They will strike here next. Must be there.
-            I'll need to avoid suspicion by leaving Acorn here.""")
+            I'll need to avoid suspicion by leaving Acorn here." """)
+            
+            
+@adv.when("feed horse")
+@adv.when("use apples")
+def feed_horse():
+        global inventory
+        # Make sure you have the thing first
+        obj = inventory.find('some apples')
+        
+
+        # Do you have this thing?
+        if not obj:
+            print("And WHAT EXACTLY do you plan on feeding the horse? It already has hay...")
+        else:
+            print("The horse gobbles up the apples and seems to act more friendly.")
+            forest.contents.add(apples)
+            
+@adv.when("eat apples")
+def eat_error():
+    print("Don't you think you'd rather save those for the horse?")
     
 @adv.when("ride horse")
 @adv.when("get on horse")
@@ -142,22 +282,33 @@ def horse_buck(current_room):
         print("""You mount the horse. It stands still for a moment, then the horse bucks like crazy.
 You fall off and fly through the window of the cabin. Stunned, you lay there for a moment.
 You get up and have the presence of mind to unlock the door from the inside.
-
+        
 """)
-        current_room.locked["east"] = False
-        go("east")
 
+        current_room.locked["east"] = False
+        go('east')
         
 
+ 
+
 # Create your items
-saddle = adv.Item("nice saddle, but dusty", "saddle")
+saddle = adv.Item("a nice, dusty, saddle", "a saddle")
 saddle.use_item = saddle_horse
 
-cloak = adv.Item("a mottled cloak in good condition", "cloak")
+cloak = adv.Item("a mottled cloak in good condition", "a cloak")
 cloak.use_item = wear_cloak
 
-papers = adv.Item("a sheaf of papers with an oak leaf insignia.", "papers")
+papers = adv.Item("a sheaf of papers with an oak leaf insignia.", "some papers")
 papers.use_item = read_papers
+
+bucket = adv.Item("a small wooden bucket", "a bucket")
+bucket.use_item = fill_bucket
+bucket.use_item = fill_trough
+bucket.use_item = wash_horse
+
+apples = adv.Item("a bag of ripe red apples", "some apples", "apples", "bag")
+apples.use_item = feed_horse
+
 # Create empty Bags for room contents
 forest.contents = adv.Bag()
 cabin.contents = adv.Bag()
@@ -167,6 +318,8 @@ stable.contents = adv.Bag()
 stable.contents.add(saddle)
 cabin.contents.add(papers)
 cabin.contents.add(cloak)
+stable.contents.add(bucket)
+forest.contents.add(apples)
 
 
 # Set up your current empty inventory
@@ -201,11 +354,17 @@ def go(direction: str):
         else:
             current_room = next_room
             print(f"You go {direction}.")
+            
+            slip()
             look()
+            
 
     # No exit that way
     else:
         print(f"You can't go {direction}.")
+        
+
+        
 
 # How do you look at the room?
 @adv.when("look")
